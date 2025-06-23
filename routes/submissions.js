@@ -39,4 +39,41 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/", async (req, res) => {
+  try {
+    const submissions = await Submission.find()
+      .populate("project", "name description")
+      .exec();
+    res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!["waiting", "grouped", "completed"].includes(status)) {
+      return res.status(400).json({ error: "Status inválido" });
+    }
+
+    const updated = await Submission.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    )
+      .populate("project", "name description")
+      .exec();
+
+    if (!updated) {
+      return res.status(404).json({ error: "Submissão não encontrada" });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

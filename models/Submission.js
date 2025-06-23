@@ -14,7 +14,7 @@ const submissionSchema = new mongoose.Schema({
     enum: ["waiting", "grouped", "completed"],
     default: "waiting",
   },
-  deliverDate: { type: Date, default: Date.now },
+  deliverDate: Date,
   deployUrl: String,
   githubUrl: String,
 });
