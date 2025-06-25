@@ -6,7 +6,41 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const projects = await Project.find({ status: "available" });
+    const projects = await Project.aggregate([
+      { $match: { status: "available" } },
+      {
+        $lookup: {
+          from: "submissions",
+          localField: "_id",
+          foreignField: "project",
+          as: "submissions",
+        },
+      },
+      {
+        $addFields: {
+          waitingCount: {
+            $size: {
+              $filter: {
+                input: "$submissions",
+                as: "submission",
+                cond: { $eq: ["$$submission.status", "waiting"] },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          description: 1,
+          category: 1,
+          technologies: 1,
+          difficulty: 1,
+          waitingCount: 1,
+          status: 1,
+        },
+      },
+    ]);
     res.json(projects);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -22,7 +56,6 @@ router.get("/all", async (req, res) => {
   }
 });
 
-// POST - Criar projeto
 router.post("/", async (req, res) => {
   try {
     const project = new Project(req.body);
